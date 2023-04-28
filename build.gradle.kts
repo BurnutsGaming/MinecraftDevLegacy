@@ -11,7 +11,6 @@
 import org.cadixdev.gradle.licenser.header.HeaderStyle
 import org.cadixdev.gradle.licenser.tasks.LicenseUpdate
 import org.gradle.internal.jvm.Jvm
-import org.gradle.internal.os.OperatingSystem
 import org.jetbrains.gradle.ext.settings
 import org.jetbrains.gradle.ext.taskTriggers
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -43,7 +42,7 @@ version = "$ideaVersionName-$coreVersion"
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(11))
+        languageVersion.set(JavaLanguageVersion.of(17))
     }
 }
 kotlin {
@@ -191,14 +190,14 @@ tasks.runPluginVerifier {
 tasks.withType<JavaCompile>().configureEach {
     options.encoding = "UTF-8"
     options.compilerArgs = listOf("-proc:none")
-    options.release.set(11)
+    options.release.set(17)
 }
 
 tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
+        jvmTarget = JavaVersion.VERSION_17.toString()
         // K2 causes the following error: https://youtrack.jetbrains.com/issue/KT-52786
-        freeCompilerArgs = listOf(/*"-Xuse-k2", */"-Xjvm-default=all", "-Xjdk-release=11")
+        freeCompilerArgs = listOf(/*"-Xuse-k2", */"-Xjvm-default=all", "-Xjdk-release=17")
         kotlinDaemonJvmArguments.add("-Xmx2G")
     }
 }
@@ -245,7 +244,11 @@ tasks.test {
         }
     }
     systemProperty("NO_FS_ROOTS_ACCESS_CHECK", "true")
-    jvmArgs("--illegal-access=deny")
+
+    jvmArgs(
+        "-Dsun.io.useCanonCaches=false",
+        "-Dsun.io.useCanonPrefixCache=false",
+    )
 }
 
 idea {
@@ -361,22 +364,4 @@ tasks.runIde {
 tasks.buildSearchableOptions {
     // not working atm
     enabled = false
-    // https://youtrack.jetbrains.com/issue/IDEA-210683
-    jvmArgs(
-        "--illegal-access=deny",
-        "--add-exports=java.base/jdk.internal.vm=ALL-UNNAMED",
-        "--add-opens=java.base/java.lang=ALL-UNNAMED",
-        "--add-opens=java.base/java.util=ALL-UNNAMED",
-        "--add-opens=java.desktop/java.awt.event=ALL-UNNAMED",
-        "--add-opens=java.desktop/java.awt=ALL-UNNAMED",
-        "--add-opens=java.desktop/javax.swing.plaf.basic=ALL-UNNAMED",
-        "--add-opens=java.desktop/javax.swing=ALL-UNNAMED",
-        "--add-opens=java.desktop/sun.awt=ALL-UNNAMED",
-        "--add-opens=java.desktop/sun.font=ALL-UNNAMED",
-        "--add-opens=java.desktop/sun.swing=ALL-UNNAMED",
-    )
-
-    if (OperatingSystem.current().isMacOsX) {
-        jvmArgs("--add-opens=java.desktop/com.apple.eawt.event=ALL-UNNAMED")
-    }
 }

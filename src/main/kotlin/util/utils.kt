@@ -107,7 +107,7 @@ inline fun <T : Any?> PsiFile.applyWriteAction(crossinline func: PsiFile.() -> T
     return result
 }
 
-inline fun <T> runReadActionAsync(crossinline runnable: () -> T): Promise<T> {
+fun <T> runReadActionAsync(runnable: () -> T): Promise<T> {
     return runAsync {
         runReadAction(runnable)
     }
@@ -224,8 +224,12 @@ fun Module.findChildren(): Set<Module> {
                 continue
             }
 
-            val path = manager.getModuleGroupPath(m) ?: continue
-            val namedModule = path.last()?.let { manager.findModuleByName(it) } ?: continue
+            val path = manager.getModuleGrouper(null).getGroupPath(m)
+            if (path.isEmpty()) {
+                continue
+            }
+
+            val namedModule = manager.findModuleByName(path.last()) ?: continue
 
             if (namedModule != this) {
                 continue
